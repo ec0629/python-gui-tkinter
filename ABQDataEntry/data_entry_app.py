@@ -1,5 +1,8 @@
 import tkinter as tk
 from tkinter import ttk
+from datetime import datetime
+import os
+import csv
 
 
 class LabelInput(tk.Frame):
@@ -223,8 +226,24 @@ class Application(tk.Tk):
         self.statusbar = ttk.Label(self, textvariable=self.status)
         self.statusbar.grid(sticky=(tk.W + tk.E), row=3, padx=10)
 
+        self.records_saved = 0
+
     def on_save(self):
-        pass
+        datestring = datetime.today().strftime("%Y-%m-%d")
+        filename = "abq_data_record_{}.csv".format(datestring)
+        newfile = not os.path.exists(filename)
+        data = self.recordform.get()
+
+        with open(filename, 'a') as fh:
+            csvwriter = csv.DictWriter(fh, fieldnames=data.keys())
+            if newfile:
+                csvwriter.writeheader()
+            csvwriter.writerow(data)
+
+        self.records_saved += 1
+        self.status.set(
+            "{} records saved this session".format(self.records_saved))
+        self.recordform.reset()
 
 
 if __name__ == "__main__":
