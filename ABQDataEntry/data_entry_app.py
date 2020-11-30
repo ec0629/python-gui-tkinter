@@ -200,7 +200,7 @@ class DataRecordForm(tk.Frame):
             widget.set('')
 
 
-class ValidationMixin:
+class ValidatedMixin:
     """Adds validation functionality to an input"""
 
     def __init__(self, *args, error_var=None, **kwargs):
