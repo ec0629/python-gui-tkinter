@@ -43,6 +43,11 @@ The program must:
 * Be accessible to color blind users.
 * Run on Debian Linux.
 * Run acceptably on a low-end PC.
+* have inputs that:
+  - ignore meaningless keystrokes
+  - require a value for all fields, except Notes
+  - get marked with an error if the value is invalid on focusout
+* prevent saving the record when errors are present
 
 Data Dictionary
 ---------------
