@@ -268,6 +268,15 @@ class ValidatedMixin:
         return valid
 
 
+class RequiredEntry(ValidatedMixin, ttk.Entry):
+    def _focusout_validate(self, event):
+        valid = True
+        if not self.get():
+            valid = False
+            self.error.set('A value is required')
+        return valid
+
+
 class Application(tk.Tk):
     """Application root window"""
 
