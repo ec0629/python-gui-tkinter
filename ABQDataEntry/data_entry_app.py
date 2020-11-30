@@ -277,6 +277,67 @@ class RequiredEntry(ValidatedMixin, ttk.Entry):
         return valid
 
 
+class DateEntry(ValidatedMixin, ttk.Entry):
+    """Date entry widget which accepts ISO style dates (Year-Month-Day)"""
+
+    def _key_validate(self, action, index, char, **kwargs):
+        valid = True
+
+        if action == '0':  # delete events always validate
+            valid = True
+        elif index in ('0', '1', '2', '3', '5', '6', '8', '9'):
+            valid = char.isdigit()
+        elif index in ('4', '7'):
+            valid = char == '-'
+        else:
+            valid = False
+
+        return valid
+
+    def _focusout_validate(self, event):
+        valid = True
+        if not self.get():
+            self.error.set('A value is required')
+            valid = False
+        try:
+            datetime.strptime(self.get(), '%Y-%m-%d')
+        except ValueError:
+            self.error.set('Invalid date')
+            valid = False
+
+        return valid
+
+
+class ValidatedCombobox(ValidatedMixin, ttk.Combobox):
+    def _key_validate(self, proposed, action, **kwargs):
+        valid = True
+        # if delete erase value
+        if action == '0':
+            self.set('')
+            return True
+
+        # get list of values
+        values = self.cget('values')
+        matching = [
+            x for x in values
+            if x.lower().startswith(proposed.lower())
+        ]
+        if len(matching) == 0:
+            valid = False
+        elif len(matching) == 1:
+            self.set(matching[0])
+            self.icursor(tk.END)
+            valid = False
+        return valid
+
+    def _focusout_validate(self, **kwargs):
+        valid = True
+        if not self.get():
+            valid = False
+            self.error.set('A value is required')
+        return valid
+
+
 class Application(tk.Tk):
     """Application root window"""
 
