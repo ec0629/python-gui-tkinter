@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from datetime import datetime
+from decimal import Decimal, InvalidOperation
 import os
 import csv
 
@@ -278,7 +279,9 @@ class RequiredEntry(ValidatedMixin, ttk.Entry):
 
 
 class DateEntry(ValidatedMixin, ttk.Entry):
-    """Date entry widget which accepts ISO style dates (Year-Month-Day)"""
+    """
+    Date entry widget which accepts ISO style dates (Year-Month-Day)
+    """
 
     def _key_validate(self, action, index, char, **kwargs):
         valid = True
@@ -335,6 +338,75 @@ class ValidatedCombobox(ValidatedMixin, ttk.Combobox):
         if not self.get():
             valid = False
             self.error.set('A value is required')
+        return valid
+
+
+class ValidatedSpinbox(ValidatedMixin, ttk.Spinbox):
+
+    def __init__(self, *args, min_var=None, max_var=None,
+                 focus_update_var=None, from_='-Infinity',
+                 to='Infinity', **kwargs):
+        super().__init__(*args, from_=from_, to=to, **kwargs)
+        self.resolution = Decimal(str(kwargs.get('increment', '1.0')))
+        self.precision = (
+            self.resolution
+            .normalize()
+            .as_tuple()
+            .exponent
+        )
+
+    def _key_validate(self, char, index, current,
+                      proposed, action, **kwargs):
+        valid = True
+        min_val = self.cget('from')
+        max_val = self.cget('to')
+        no_negative = min_val >= 0
+        no_decimal = self.precision >= 0
+
+        if action == '0':
+            return True
+
+        # First, filter out obviously invalid keystrokes
+        if any([
+            (char not in ('-1234567890.')),
+            (char == '-' and (no_negative or index != '0')),
+            (char == '.' and (no_decimal or '.' in current))
+        ]):
+            return False
+
+        # If we've made it this far proposed can be either
+        # '-', '.', '-.' or a valid Decimal
+        # check below will handle partial inputs without a
+        # number in them yet
+        if proposed in '-.':
+            return True
+
+        # Proposed must be a valid Decimal String
+        proposed = Decimal(proposed)
+        proposed_precision = proposed.as_tuple().exponent
+
+        if any([
+            (proposed > max_val),
+            (proposed_precision < self.precision),
+        ]):
+            return False
+
+        return valid
+
+    def _focusout_validate(self, **kwargs):
+        valid = True
+        value = self.get()
+        min_val = self.cget('from')
+
+        try:
+            value = Decimal(value)
+        except InvalidOperation:
+            self.error.set('Invalid number string: {}'.format(value))
+            return False
+
+        if value < min_val:
+            self.error.set('Value is too low (min {})'.format(min_val))
+            valid = False
         return valid
 
 
